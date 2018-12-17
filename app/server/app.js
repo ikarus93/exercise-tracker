@@ -34,6 +34,7 @@ app.post("/api/exercise/new-user", async (req, res, next) => {
         }
         
         await x.addUser(user);
+        console.log("success")
         
         
     } catch(err) {
