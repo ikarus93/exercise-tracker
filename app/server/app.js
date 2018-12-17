@@ -1,6 +1,7 @@
 const express = require("express"),
       app = express(),
-      parser = require('body-parser');
+      parser = require('body-parser'),
+      db = require('../database/dbConnection');
 
 
 
@@ -9,11 +10,36 @@ app.use(parser.urlencoded({ extended: false }));
     
     
 app.get("/", (req, res, next) => {
+    /* Root url ("/")
+       Type of Req: "GET"
+       Response: index.html
+     */
         res.sendFile('/client/index.html', {root: __dirname + "/../"});
 });
     
-app.post("/api/exercise/new-user", (req, res, next) => {
+app.post("/api/exercise/new-user", async (req, res, next) => {
+    /* Creates new User ("/api/exercise/new-user")
+       Type of req: "POST"
+       req body parameters: user = name for new user
+     */
+     
     const user = req.body.user;
+    
+    const x = new db(); //create new instance of db
+    try {
+        
+        const hasUser = await x.checkExistingUser(user);
+        if (hasUser) {
+            throw new Error("User already exists");
+        }
+        
+        await x.addUser(user);
+        
+        
+    } catch(err) {
+        
+    }
+    
     
         
 })
