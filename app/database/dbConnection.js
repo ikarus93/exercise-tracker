@@ -38,12 +38,8 @@ function Db () {
         const userCollection = client.db('fcc').collection('users');
         const res = await userCollection.findOne({"name": name});
         
-        if (res !== null) {
-            return true;
-        } else {
-            return false;
-        }
-        
+        return res !== null;
+      
         
         
     }
@@ -51,17 +47,35 @@ function Db () {
     this.addUser = async function(name) {
         //Adds user to database, 
         //parameters: name - the username as string
-        //returns ID to identify user
+        //returns object with name and id to identify user
         
-        const client = await this.connect();
-        const userCollection = client.db('fcc').collection('users');
-        const res = await userCollection.insert({"name": name});
-        console.log(res)
+        const client = await this.connect(); //connect t db
         
+        const userCollection = client.db('fcc').collection('users'); //get user collection
+        
+        const res = await userCollection.insert({"name": name, "userId": 0}); //insert new user into document
+        const userLength = await userCollection.countDocuments(); //get total of documents in collection to create unique id
+        let userId = res["ops"][0]["_id"].toString().slice(0, 4) + userLength; //create user id
+        
+        const update = await userCollection.update({"name": name}, {$set :{"userId" :userId}});
+        
+        if (update["result"]["ok"]) {
+            return {"name": name, "userId": userId}
+        } else {
+            throw new Error("Couldn't successfully add User");
+        }
+
         
         
     }
     
+    this.createExercise = async function({userId, desc, dur, date}) {
+        //Adds exercise to exercises collection
+        //takes object containing userId, description, duration and date as input
+        //returns 
+        
+    }
+
 }
 module.exports = Db;
 

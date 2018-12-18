@@ -33,12 +33,13 @@ app.post("/api/exercise/new-user", async (req, res, next) => {
             throw new Error("User already exists");
         }
         
-        await x.addUser(user);
-        console.log("success")
+        const result = await x.addUser(user);
+        
+        return res.send({"username": result["name"], "userId": result["userId"]})
         
         
     } catch(err) {
-        
+        console.log(err)
     }
     
     
