@@ -69,10 +69,31 @@ function Db () {
         
     }
     
-    this.createExercise = async function({userId, desc, dur, date}) {
+    this.getNameFromId = async function(userId, client) {
+        // String, clientObject -> String
+        // takes userId and database client object -> queries db for username relating to id, throws error on user missing
+        
+        const userCollection = client.db('fcc').collection('users');
+        const username = await userCollection.findOne({"userId": userId});
+        
+        return username;
+        
+        
+
+    }
+    
+    this.createExercise = async function(userId, desc, dur, date) {
         //Adds exercise to exercises collection
         //takes object containing userId, description, duration and date as input
-        //returns 
+        //returns object containing the included data if operation was successful
+        
+        const client = await this.connect();
+        const username = await this.getNameFromId(userId, client);
+        
+        if (!username) throw new Error("Invalid user id");
+       // const exCollection = client.db('fcc').collection('exercises');
+        
+        
         
     }
 
