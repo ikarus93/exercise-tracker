@@ -1,4 +1,5 @@
-const MongoClient = require('mongodb').MongoClient;
+const MongoClient = require('mongodb').MongoClient,
+      helpers = require('../helpers/helpers');
 
 
 // db constructor
@@ -12,6 +13,8 @@ function Db () {
                 this.disconnect => closes connection on current db instance
                 this.checkExistingUser => checks whether a user with provided name already exists in db
                 this.addUser => adds user to database returns boolean based on success of operation
+                this.getNameFromId => gets username from supplied id
+                this.createExercise => creates exercise with user input
     */
     
     
@@ -20,7 +23,7 @@ function Db () {
     
     this.connect = function() {
         //opens and returns instance of database
-        return MongoClient.connect(this.url);
+        return MongoClient.connect(this.url,{ useNewUrlParser: true });
     }
     
     this.disconnect = function(db) {
@@ -53,11 +56,11 @@ function Db () {
         
         const userCollection = client.db('fcc').collection('users'); //get user collection
         
-        const res = await userCollection.insert({"name": name, "userId": 0}); //insert new user into document
+        const res = await userCollection.insertOne({"name": name, "userId": 0}); //insert new user into document
         const userLength = await userCollection.countDocuments(); //get total of documents in collection to create unique id
         let userId = res["ops"][0]["_id"].toString().slice(0, 4) + userLength; //create user id
         
-        const update = await userCollection.update({"name": name}, {$set :{"userId" :userId}});
+        const update = await userCollection.updateOne({"name": name}, {$set :{"userId" :userId}});
         
         if (update["result"]["ok"]) {
             return {"name": name, "userId": userId}
@@ -83,15 +86,37 @@ function Db () {
     }
     
     this.createExercise = async function(userId, desc, dur, date) {
+        // Obj(userId, desc, dur, date) -> ...
         //Adds exercise to exercises collection
-        //takes object containing userId, description, duration and date as input
-        //returns object containing the included data if operation was successful
+        //throws error if not successful
         
         const client = await this.connect();
         const username = await this.getNameFromId(userId, client);
         
         if (!username) throw new Error("Invalid user id");
-       // const exCollection = client.db('fcc').collection('exercises');
+        
+        const exCollection = client.db('fcc').collection('exercises');
+        const res = await exCollection.insertOne({"userId": userId, "desc": desc, "dur": dur, "date": date})
+        
+        if (!res.result.ok) throw new Error("Could not insert data into Database");
+
+    }
+    
+    this.getLog = async function(userId, to, from) {
+        // String, Date, Date -> Array of Objects
+        // Validates userId, then gets exercise log and fit it to date range
+        
+        const client = await this.connect();
+        const userCollection = client.db('fcc').collection('users');
+        const validUser = await userCollection.findOne({"userId": userId});
+        
+        if (!validUser) throw new Error("Invalid userId supplied");
+        
+        const exCollection = client.db('fcc').collection('exercises');
+        const usersExercises = await exCollection.find({"userId": userId}).toArray();
+        //fix filter dates
+        return usersExercises.filter(ex => helpers.compareDates(to, ex.date) && helpers.compareDates(ex.date, from));
+        
         
         
         

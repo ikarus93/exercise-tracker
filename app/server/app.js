@@ -7,7 +7,7 @@ const express = require("express"),
 
 
 //Middleware
-app.use(parser.urlencoded({ extended: false }));
+app.use(parser.urlencoded({ extended: false })); //Bodyparser
     
     
 app.get("/", (req, res, next) => {
@@ -55,7 +55,7 @@ app.post("/api/exercise/add", async (req, res, next) => {
        response on success -> json obj containing username and userId
      */
      
-    const {id, desc, dur, date} = req.body;
+    const {userId, desc, dur, date} = req.body;
 
     try {
         
@@ -63,12 +63,14 @@ app.post("/api/exercise/add", async (req, res, next) => {
         
         if (!helpers.validateDate(req.body.date)) throw new Error("Invalid Date supplied");
         
-        if (isNaN(parseInt(req.body.dur))) throw new Error("Duration is not a valid number");
+        if (req.body.dur.split("").filter(x => isNaN(parseInt(x))).length) throw new Error("Duration is not a valid number");
         
-    
+
         const database = new Db();
         
-        database.createExercise(id, desc, dur, date)
+        await database.createExercise(userId, desc, dur, date);
+        
+        res.json({userId: userId, desc: desc, dur: dur, date: date});
     
         
     } catch(err) {
@@ -82,8 +84,36 @@ app.post("/api/exercise/add", async (req, res, next) => {
     
 })
 
-app.get("/api/exercise/log", (req, res, next) => {
-    const [id, from, to, limit] = [req.query.userId, req.query.from, req.query.to, req.query.limit];
+app.get("/api/exercise/log", async (req, res, next) => {
+    /* Returns exercise log for specified user ("/api/exercise/add")
+       Type of req -> "POST"
+       req query parameters: id = userId, from = starting point, to = ending point, limit = limit of log entries to be returned 
+       response on success -> json obj containing log
+     */
+     
+    
+    try {
+        
+        if (Object.values(req.query).filter(x => x).length !== 4) throw new Error("Invalid request. Please provide the necessary values as per Guideline");
+
+        if (!helpers.validateDate(req.query.from) || !helpers.validateDate(req.query.to)) throw new Error("Invalid Date supplied");
+        
+        
+        if (isNaN(parseInt(req.query.limit)) || req.query.limit === 0) req.query.limit = null;
+        
+
+        
+        const database = new Db();
+        
+        let log = await database.getLog(req.query.userId, req.query.from, req.query.to);
+        
+        console.log(log)
+        
+        
+
+    } catch(err) {
+        console.log(err)
+    }
     
 })
 
