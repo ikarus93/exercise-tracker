@@ -114,7 +114,7 @@ function Db () {
         
         const exCollection = client.db('fcc').collection('exercises');
         const usersExercises = await exCollection.find({"userId": userId}).toArray();
-        //fix filter dates
+        //fix filter dates and test commit changes
         return usersExercises.filter(ex => helpers.compareDates(to, ex.date) && helpers.compareDates(ex.date, from));
         
         
