@@ -32,7 +32,10 @@ app.post("/api/exercise/new-user", async (req, res, next) => {
         
         const hasUser = await database.checkExistingUser(user);
         if (hasUser) {
-            throw new Error("User already exists");
+            let err = new Error("User already exists");
+            err.status = 400;
+            err.type = "Bad Request";
+            throw err;
         }
         
         const result = await database.addUser(user);
@@ -41,7 +44,7 @@ app.post("/api/exercise/new-user", async (req, res, next) => {
         
         
     } catch(err) {
-        console.log(err)
+        next(err);
     }
     
     
@@ -59,11 +62,26 @@ app.post("/api/exercise/add", async (req, res, next) => {
 
     try {
         
-        if (Object.values(req.body).filter(x => x).length !== 4) throw new Error("Invalid request. Missing values in form");
+        if (Object.values(req.body).filter(x => x).length !== 4) {
+            let err = new Error("Invalid request. Missing values in form");
+            err.status = 400;
+            err.type = "Bad Request";
+            throw err;
+        }
         
-        if (!helpers.validateDate(req.body.date)) throw new Error("Invalid Date supplied");
+        if (!helpers.validateDate(req.body.date)) {
+            let err = new Error("Invalid Date supplied");
+            err.status = 400;
+            err.type = "Bad Request";
+            throw err;
+        }
         
-        if (req.body.dur.split("").filter(x => isNaN(parseInt(x))).length) throw new Error("Duration is not a valid number");
+        if (req.body.dur.split("").filter(x => isNaN(parseInt(x))).length){
+            let err = new Error("Duration is not a valid number");
+            err.status = 400;
+            err.type = "Bad Requuest";
+            throw err;
+        } 
         
 
         const database = new Db();
@@ -74,13 +92,8 @@ app.post("/api/exercise/add", async (req, res, next) => {
     
         
     } catch(err) {
-        console.log(err);
+        next(err);
     }
-    
-    
-    
-    
-    
     
 })
 
@@ -88,37 +101,63 @@ app.get("/api/exercise/log", async (req, res, next) => {
     /* Returns exercise log for specified user ("/api/exercise/add")
        Type of req -> "POST"
        req query parameters: id = userId, from = starting point, to = ending point, limit = limit of log entries to be returned 
-       response on success -> json obj containing log
+       response on success -> json array of objects containing log
      */
      
     
     try {
         
-        if (Object.values(req.query).filter(x => x).length !== 4) throw new Error("Invalid request. Please provide the necessary values as per Guideline");
+        
+        if (Object.values(req.query).filter(x => x).length !== 4){
+            let err = new Error("Invalid request. Please provide the necessary values as per Guideline");
+            err.status = 400;
+            err.type = "Bad Request";
+            throw err;
+        }  
 
-        if (!helpers.validateDate(req.query.from) || !helpers.validateDate(req.query.to)) throw new Error("Invalid Date supplied");
+        if (!helpers.validateDate(req.query.from) || !helpers.validateDate(req.query.to)){
+            let err = new Error("Invalid Date supplied");
+            err.status = 400;
+            err.type = "Bad Request";
+            throw err; 
+        }  
         
-        
-        if (isNaN(parseInt(req.query.limit)) || req.query.limit === 0) req.query.limit = null;
+        req.query.limit = parseInt(req.query.limit);
+
+        if (isNaN(req.query.limit) || req.query.limit === 0) req.query.limit = null;  //return all entries if limit is 0 or undefined
         
 
         
         const database = new Db();
         
-        let log = await database.getLog(req.query.userId, req.query.from, req.query.to);
+        let log = await database.getLog(req.query.userId, req.query.to, req.query.from);
+        log = log.sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
+        let responseData;
         
-        console.log(log)
+        if (req.query.limit !== null) {
+            responseData = log.slice(0, req.query.limit);
+        } else {
+            responseData = log;
+        }
+
+        
+       return res.json(responseData);
         
         
 
     } catch(err) {
-        console.log(err)
+        next(err);
     }
     
 })
 
+//===Error Handling===//
+app.use((err, req, res, next) => {
+    res.json({type: err.type || "Server Error", status: err.status || 500, message: err.message || "Unknow Error occured"});
+})
 
 
-app.listen(8080, () => {
+
+app.listen(8080 || process.env.PORT, () => {
     console.log("Server is running on port 8080");
 })

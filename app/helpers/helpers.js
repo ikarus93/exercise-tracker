@@ -18,7 +18,7 @@ function compareDates(d1, d2) {
     // Returns true if d1 is larger than or equal d2
     
     [d1, d2] = [Date.parse(d1), Date.parse(d2)];
-    console.log(d1, d2)
+
     
     return d1 > d2 || d1 === d2;
 }

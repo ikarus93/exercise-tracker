@@ -43,8 +43,6 @@ function Db () {
         
         return res !== null;
       
-        
-        
     }
     
     this.addUser = async function(name) {
@@ -65,7 +63,10 @@ function Db () {
         if (update["result"]["ok"]) {
             return {"name": name, "userId": userId}
         } else {
-            throw new Error("Couldn't successfully add User");
+            let err = new Error("Couldn't successfully add User");
+            err.status = 500;
+            err.type = "Internal Server Error";
+            throw err;
         }
 
         
@@ -93,12 +94,22 @@ function Db () {
         const client = await this.connect();
         const username = await this.getNameFromId(userId, client);
         
-        if (!username) throw new Error("Invalid user id");
+        if (!username){
+            let err = new Error("Invalid user id");
+            err.status = 400;
+            err.type = "Bad Request";
+            throw err;
+        }  
         
         const exCollection = client.db('fcc').collection('exercises');
         const res = await exCollection.insertOne({"userId": userId, "desc": desc, "dur": dur, "date": date})
         
-        if (!res.result.ok) throw new Error("Could not insert data into Database");
+        if (!res.result.ok) {
+            let err = new Error("Could not insert data into Database");
+            err.status = 500;
+            err.type = "Internal Server Error";
+            throw err;
+        }
 
     }
     
@@ -110,13 +121,17 @@ function Db () {
         const userCollection = client.db('fcc').collection('users');
         const validUser = await userCollection.findOne({"userId": userId});
         
-        if (!validUser) throw new Error("Invalid userId supplied");
+        if (!validUser){
+            let err = new Error("Invalid userId supplied");
+            err.status = 401;
+            err.type = "Unauthorized";
+            throw err;
+        }  
         
         const exCollection = client.db('fcc').collection('exercises');
         const usersExercises = await exCollection.find({"userId": userId}).toArray();
         //fix filter dates and test commit changes
         return usersExercises.filter(ex => helpers.compareDates(to, ex.date) && helpers.compareDates(ex.date, from));
-        
         
         
         
