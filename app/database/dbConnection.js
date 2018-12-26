@@ -15,6 +15,7 @@ function Db () {
                 this.addUser => adds user to database returns boolean based on success of operation
                 this.getNameFromId => gets username from supplied id
                 this.createExercise => creates exercise with user input
+                this.deleteTestUser => deletes the created user for testing purposes only
     */
     
     
@@ -40,8 +41,7 @@ function Db () {
         const client = await this.connect();
         const userCollection = client.db('fcc').collection('users');
         const res = await userCollection.findOne({"name": name});
-        
-        return res !== null;
+        return res !== null && res.name !== null;
       
     }
     
@@ -133,8 +133,21 @@ function Db () {
         //fix filter dates and test commit changes
         return usersExercises.filter(ex => helpers.compareDates(to, ex.date) && helpers.compareDates(ex.date, from));
         
-        
-        
+    }
+    
+    this.deleteTestUser = async (user) => {
+        // String -> 
+        // deletes the specified user from db
+        //Functionality used for backend testing only
+        console.log("USER", id)
+        const client = await this.connect();
+        const userCollection = client.db('fcc').collection('users');
+        let result = await userCollection.findOne({'name': user});
+        if (result) {
+            await userCollection.deleteOne({'name': user});
+            
+        }
+        await userCollection.deleteMany({'name': null}); //Mlab just removes key/sets it to null, so this is to clean up db
     }
 
 }

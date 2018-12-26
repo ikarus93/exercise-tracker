@@ -24,11 +24,17 @@ app.post("/api/exercise/new-user", async (req, res, next) => {
        req body parameters: user = name for new user
        response on success -> json obj containing username and userId
      */
-     
+     try {
     const user = req.body.user;
+    if (!req.body.user) {
+        let err = new Error("Please provide a username");
+        err.status = 400;
+        err.type = "Bad Request";
+        throw err;
+    }
     
     const database = new Db(); //create new instance of db
-    try {
+    
         
         const hasUser = await database.checkExistingUser(user);
         if (hasUser) {
@@ -39,8 +45,7 @@ app.post("/api/exercise/new-user", async (req, res, next) => {
         }
         
         const result = await database.addUser(user);
-        
-        return res.json({"username": result["name"], "userId": result["userId"]})
+        return res.json(JSON.stringify({username: result["name"], userId: result["userId"]}))
         
         
     } catch(err) {
@@ -153,7 +158,8 @@ app.get("/api/exercise/log", async (req, res, next) => {
 
 //===Error Handling===//
 app.use((err, req, res, next) => {
-    res.json({type: err.type || "Server Error", status: err.status || 500, message: err.message || "Unknow Error occured"});
+    console.log(err)
+    res.status(err.status || 500).json({type: err.type || "Server Error", status: err.status || 500, message: err.message || "Unknow Error occured"});
 })
 
 
@@ -161,3 +167,5 @@ app.use((err, req, res, next) => {
 app.listen(8080 || process.env.PORT, () => {
     console.log("Server is running on port 8080");
 })
+
+module.exports = app; //for testing
