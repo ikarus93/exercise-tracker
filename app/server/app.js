@@ -84,7 +84,7 @@ app.post("/api/exercise/add", async (req, res, next) => {
         if (req.body.dur.split("").filter(x => isNaN(parseInt(x))).length){
             let err = new Error("Duration is not a valid number");
             err.status = 400;
-            err.type = "Bad Requuest";
+            err.type = "Bad Request";
             throw err;
         } 
         

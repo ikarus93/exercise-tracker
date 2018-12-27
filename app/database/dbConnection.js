@@ -139,10 +139,10 @@ function Db () {
         // String -> 
         // deletes the specified user from db
         //Functionality used for backend testing only
-        console.log("USER", id)
+        console.log("USER", user)
         const client = await this.connect();
         const userCollection = client.db('fcc').collection('users');
-        let result = await userCollection.findOne({'name': user});
+        const result = await userCollection.findOne({'name': user});
         if (result) {
             await userCollection.deleteOne({'name': user});
             
