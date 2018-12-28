@@ -45,7 +45,7 @@ app.post("/api/exercise/new-user", async (req, res, next) => {
         }
         
         const result = await database.addUser(user);
-        return res.json(JSON.stringify({username: result["name"], userId: result["userId"]}))
+        return res.json({username: result["name"], userId: result["userId"]})
         
         
     } catch(err) {
@@ -135,7 +135,7 @@ app.get("/api/exercise/log", async (req, res, next) => {
         
         const database = new Db();
         
-        let log = await database.getLog(req.query.userId, req.query.to, req.query.from);
+        let log = await database.getLog(req.query.id, req.query.to, req.query.from);
         log = log.sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
         let responseData;
         
@@ -145,6 +145,10 @@ app.get("/api/exercise/log", async (req, res, next) => {
             responseData = log;
         }
 
+        responseData = responseData.map(x => {
+            delete x["_id"];
+            return x;
+        }) //remove mongo object id
         
        return res.json(responseData);
         

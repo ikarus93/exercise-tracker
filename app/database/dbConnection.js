@@ -96,8 +96,8 @@ function Db () {
         
         if (!username){
             let err = new Error("Invalid user id");
-            err.status = 400;
-            err.type = "Bad Request";
+            err.status = 401;
+            err.type = "Unauthorized";
             throw err;
         }  
         
@@ -116,7 +116,7 @@ function Db () {
     this.getLog = async function(userId, to, from) {
         // String, Date, Date -> Array of Objects
         // Validates userId, then gets exercise log and fit it to date range
-        
+        console.log(userId)
         const client = await this.connect();
         const userCollection = client.db('fcc').collection('users');
         const validUser = await userCollection.findOne({"userId": userId});
