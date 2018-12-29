@@ -1,41 +1,45 @@
 const express = require("express"),
-      app = express(),
-      parser = require('body-parser'),
-      Db = require('../database/dbConnection'),
-      helpers = require('../helpers/helpers');
+    app = express(),
+    parser = require('body-parser'),
+    Db = require('../database/dbConnection'),
+    helpers = require('../helpers/helpers');
 
 
 
 //Middleware
-app.use(parser.urlencoded({ extended: false })); //Bodyparser
-    
-    
+app.use(parser.urlencoded({
+    extended: false
+})); //Bodyparser
+
+
 app.get("/", (req, res, next) => {
     /* Root url ("/")
        Type of req -> "GET"
        response on success -> index.html
      */
-        res.sendFile('/client/index.html', {root: __dirname + "/../"});
+    res.sendFile('/client/index.html', {
+        root: __dirname + "/../"
+    });
 });
-    
+
 app.post("/api/exercise/new-user", async (req, res, next) => {
     /* Creates new User ("/api/exercise/new-user")
        Type of req -> "POST"
        req body parameters: user = name for new user
        response on success -> json obj containing username and userId
      */
-     try {
-    const user = req.body.user;
-    if (!req.body.user) {
-        let err = new Error("Please provide a username");
-        err.status = 400;
-        err.type = "Bad Request";
-        throw err;
-    }
-    
-    const database = new Db(); //create new instance of db
-    
-        
+    try {
+        const user = req.body.user;
+        if (!req.body.user) {
+            let err = new Error("Please provide a username");
+            err.status = 400;
+            err.type = "Bad Request";
+            throw err;
+        }
+
+        const database = new Db(); //create new instance of db
+
+
         const hasUser = await database.checkExistingUser(user);
         if (hasUser) {
             let err = new Error("User already exists");
@@ -43,17 +47,20 @@ app.post("/api/exercise/new-user", async (req, res, next) => {
             err.type = "Bad Request";
             throw err;
         }
-        
+
         const result = await database.addUser(user);
-        return res.json({username: result["name"], userId: result["userId"]})
-        
-        
-    } catch(err) {
+        return res.json({
+            username: result["name"],
+            userId: result["userId"]
+        })
+
+
+    } catch (err) {
         next(err);
     }
-    
-    
-        
+
+
+
 })
 
 app.post("/api/exercise/add", async (req, res, next) => {
@@ -62,44 +69,54 @@ app.post("/api/exercise/add", async (req, res, next) => {
        req body parameters: id = userId, desc = description, dur = duration, date = date 
        response on success -> json obj containing username and userId
      */
-     
-    const {userId, desc, dur, date} = req.body;
+
+    const {
+        userId,
+        desc,
+        dur,
+        date
+    } = req.body;
 
     try {
-        
+
         if (Object.values(req.body).filter(x => x).length !== 4) {
             let err = new Error("Invalid request. Missing values in form");
             err.status = 400;
             err.type = "Bad Request";
             throw err;
         }
-        
+
         if (!helpers.validateDate(req.body.date)) {
             let err = new Error("Invalid Date supplied");
             err.status = 400;
             err.type = "Bad Request";
             throw err;
         }
-        
-        if (req.body.dur.split("").filter(x => isNaN(parseInt(x))).length){
+
+        if (req.body.dur.split("").filter(x => isNaN(parseInt(x))).length) {
             let err = new Error("Duration is not a valid number");
             err.status = 400;
             err.type = "Bad Request";
             throw err;
-        } 
-        
+        }
+
 
         const database = new Db();
-        
+
         await database.createExercise(userId, desc, dur, date);
-        
-        res.json({userId: userId, desc: desc, dur: dur, date: date});
-    
-        
-    } catch(err) {
+
+        res.json({
+            userId: userId,
+            desc: desc,
+            dur: dur,
+            date: date
+        });
+
+
+    } catch (err) {
         next(err);
     }
-    
+
 })
 
 app.get("/api/exercise/log", async (req, res, next) => {
@@ -108,37 +125,37 @@ app.get("/api/exercise/log", async (req, res, next) => {
        req query parameters: id = userId, from = starting point, to = ending point, limit = limit of log entries to be returned 
        response on success -> json array of objects containing log
      */
-     
-    
+
+
     try {
-        
-        
-        if (Object.values(req.query).filter(x => x).length !== 4){
+
+
+        if (Object.values(req.query).filter(x => x).length !== 4) {
             let err = new Error("Invalid request. Please provide the necessary values as per Guideline");
             err.status = 400;
             err.type = "Bad Request";
             throw err;
-        }  
+        }
 
-        if (!helpers.validateDate(req.query.from) || !helpers.validateDate(req.query.to)){
+        if (!helpers.validateDate(req.query.from) || !helpers.validateDate(req.query.to)) {
             let err = new Error("Invalid Date supplied");
             err.status = 400;
             err.type = "Bad Request";
-            throw err; 
-        }  
-        
+            throw err;
+        }
+
         req.query.limit = parseInt(req.query.limit);
 
-        if (isNaN(req.query.limit) || req.query.limit === 0) req.query.limit = null;  //return all entries if limit is 0 or undefined
-        
+        if (isNaN(req.query.limit) || req.query.limit === 0) req.query.limit = null; //return all entries if limit is 0 or undefined
 
-        
+
+
         const database = new Db();
-        
+
         let log = await database.getLog(req.query.id, req.query.to, req.query.from);
         log = log.sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
         let responseData;
-        
+
         if (req.query.limit !== null) {
             responseData = log.slice(0, req.query.limit);
         } else {
@@ -149,21 +166,25 @@ app.get("/api/exercise/log", async (req, res, next) => {
             delete x["_id"];
             return x;
         }) //remove mongo object id
-        
-       return res.json(responseData);
-        
-        
 
-    } catch(err) {
+        return res.json(responseData);
+
+
+
+    } catch (err) {
         next(err);
     }
-    
+
 })
 
 //===Error Handling===//
 app.use((err, req, res, next) => {
     console.log(err)
-    res.status(err.status || 500).json({type: err.type || "Server Error", status: err.status || 500, message: err.message || "Unknow Error occured"});
+    res.status(err.status || 500).json({
+        type: err.type || "Server Error",
+        status: err.status || 500,
+        message: err.message || "Unknow Error occured"
+    });
 })
 
 
