@@ -20,15 +20,6 @@ function Db() {
                 this.createExercise => creates exercise with user input
                 this.deleteTestUser => deletes the created user for testing purposes only
     */
-    Methods:
-                this.connect => opens connection via mongo client and returns db instance 
-                this.disconnect => closes connection on current db instance
-                this.checkExistingUser => checks whether a user with provided name already exists in db
-                this.addUser => adds user to database returns boolean based on success of operation
-                this.getNameFromId => gets username from supplied id
-                this.createExercise => creates exercise with user input
-                this.deleteTestUser => deletes the created user for testing purposes only
-    */
 
 
     this.url = process.env.MONGO_URL; //env var from env.sh
